@@ -17,11 +17,13 @@ import {
   AlertCircle,
   Globe,
   Flame,
-  Layers
+  Layers,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login, setActiveTab } = useApp();
+  const { login, setActiveTab, theme, toggleTheme } = useApp();
 
   const [username, setUsername] = useState('praveen');
   const [password, setPassword] = useState('praveen1732@');
@@ -75,13 +77,31 @@ export const LoginPage: React.FC = () => {
             <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
             <span className="font-semibold uppercase tracking-wider">ECOSENTINEL MESH v2.6 ACTIVE</span>
           </div>
-          <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400">
             <span className="flex items-center gap-1 text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-              148 Nodes Online
+              148 Nodes
             </span>
             <span className="text-slate-600">•</span>
-            <span>256-bit AES Auth</span>
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              type="button"
+              className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950/70 px-2 py-1 text-slate-300 hover:text-white transition-colors"
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="h-3 w-3 text-amber-400" />
+                  <span>Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-3 w-3 text-indigo-400" />
+                  <span>Dark</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 

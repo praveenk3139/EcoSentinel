@@ -25,7 +25,9 @@ import {
   ChevronRight,
   Shield,
   Activity,
-  Crosshair
+  Crosshair,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -45,7 +47,7 @@ interface NavSection {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onCloseMobile }) => {
-  const { activeTab, setActiveTab, issues, alerts, currentUser, logout } = useApp();
+  const { activeTab, setActiveTab, issues, alerts, currentUser, logout, theme, toggleTheme } = useApp();
 
   const activeIssuesCount = issues.filter(i => i.status !== 'RESOLVED').length;
   const unreadAlertsCount = alerts.filter(a => !a.acknowledged).length;
@@ -182,6 +184,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onCloseMob
 
       {/* Footer & Logout */}
       <div className="mt-6 border-t border-slate-800/80 pt-3 space-y-2">
+        {/* Quick Theme Switcher */}
+        <button
+          onClick={toggleTheme}
+          className="flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-all font-mono"
+        >
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4 text-indigo-400" />
+            )}
+            <span>{theme === 'dark' ? 'Light Theme' : 'Dark Theme'}</span>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-cyan-400">{theme}</span>
+        </button>
+
         <button
           onClick={logout}
           className="flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs font-medium text-rose-400 hover:border-rose-500/40 hover:bg-rose-950/30 hover:text-rose-300 transition-all font-mono"

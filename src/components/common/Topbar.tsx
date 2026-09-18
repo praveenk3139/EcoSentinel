@@ -18,7 +18,9 @@ import {
   Sparkles,
   Layers,
   LogOut,
-  ExternalLink
+  ExternalLink,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -39,7 +41,9 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
     alerts,
     setAuthModalOpen,
     acknowledgeAlert,
-    logout
+    logout,
+    theme,
+    toggleTheme
   } = useApp();
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -258,6 +262,20 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
           <span>IoT Studio</span>
           <ExternalLink className="h-3 w-3 text-cyan-400" />
         </a>
+
+        {/* Dark / Light Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/80 p-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-all shadow-xs"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          aria-label="Toggle Theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4 text-amber-400 hover:rotate-90 transition-transform duration-300" />
+          ) : (
+            <Moon className="h-4 w-4 text-indigo-400 hover:-rotate-12 transition-transform duration-300" />
+          )}
+        </button>
 
         {/* Landing Portal toggle */}
         <button

@@ -122,6 +122,11 @@ interface AppContextType {
   submitCitizenReport: (report: CitizenReportInput) => string;
   acknowledgeAlert: (alertId: string) => void;
   
+  // Theme
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
+  setTheme: (theme: 'dark' | 'light') => void;
+
   // Notification toasts
   toasts: ToastNotification[];
   addToast: (toast: Omit<ToastNotification, 'id' | 'timestamp'>) => void;
@@ -282,6 +287,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [simulationSpeed, setSimulationSpeed] = useState<number>(1);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+
+  // Theme state ('dark' or 'light')
+  const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('ecosentinel_theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  const setTheme = useCallback((newTheme: 'dark' | 'light') => {
+    setThemeState(newTheme);
+    localStorage.setItem('ecosentinel_theme', newTheme);
+    if (newTheme === 'light') {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, [theme]);
 
   const addToast = useCallback((toast: Omit<ToastNotification, 'id' | 'timestamp'>) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -1196,6 +1237,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeToast,
         authModalOpen,
         setAuthModalOpen,
+        theme,
+        toggleTheme,
+        setTheme,
       }}
     >
       {children}
