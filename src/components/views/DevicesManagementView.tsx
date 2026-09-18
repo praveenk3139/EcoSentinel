@@ -32,7 +32,11 @@ import {
   ToggleRight,
   Send,
   X,
-  Crosshair
+  Crosshair,
+  ExternalLink,
+  Globe,
+  Link2,
+  Terminal
 } from 'lucide-react';
 
 export const DevicesManagementView: React.FC = () => {
@@ -75,6 +79,17 @@ export const DevicesManagementView: React.FC = () => {
   const [simWaterPh, setSimWaterPh] = useState(4.8);
   const [simAqi, setSimAqi] = useState(185);
 
+  // Dedicated Studio Connect Modal State (https://eco-sentinel-device.ai.studio/)
+  const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
+  const [studioUrl, setStudioUrl] = useState('https://eco-sentinel-device.ai.studio/');
+  const [studioNodeId, setStudioNodeId] = useState('ESP32-STUDIO-01');
+  const [studioNodeName, setStudioNodeName] = useState('Virtual IoT Environmental Node (Live Feed)');
+  const [studioAreaId, setStudioAreaId] = useState(areas[0]?.id || 'zone-01');
+  const [studioLat, setStudioLat] = useState('28.6650');
+  const [studioLng, setStudioLng] = useState('77.1950');
+  const [studioSensorType, setStudioSensorType] = useState<SensorType>('PM2_5_PM10_OPTICAL');
+  const [studioIsSyncing, setStudioIsSyncing] = useState(false);
+
   const activeDevice = devices.find(d => d.id === (activeDeviceForControl?.id || selectedDeviceId)) || devices[0] || null;
 
   const filteredDevices = devices.filter(d => {
@@ -88,6 +103,33 @@ export const DevicesManagementView: React.FC = () => {
     if (selectedSensorFilter !== 'ALL' && d.sensorType !== selectedSensorFilter) return false;
     return true;
   });
+
+  const handleOpenStudioModal = (preselectedAreaId?: string) => {
+    const targetAreaId = preselectedAreaId || areas[0]?.id || 'zone-01';
+    setStudioAreaId(targetAreaId);
+    const selectedArea = areas.find(a => a.id === targetAreaId);
+    if (selectedArea) {
+      const latOffset = (Math.random() - 0.5) * 0.01;
+      const lngOffset = (Math.random() - 0.5) * 0.01;
+      setStudioLat((selectedArea.coordinates[0] + latOffset).toFixed(4));
+      setStudioLng((selectedArea.coordinates[1] + lngOffset).toFixed(4));
+    }
+    const randId = Math.floor(10 + Math.random() * 90);
+    setStudioNodeId(`ESP32-STUDIO-${randId}`);
+    setStudioNodeName(`Virtual IoT Node #${randId} (Studio Feed)`);
+    setIsStudioModalOpen(true);
+  };
+
+  const handleStudioAreaChange = (areaId: string) => {
+    setStudioAreaId(areaId);
+    const selectedArea = areas.find(a => a.id === areaId);
+    if (selectedArea) {
+      const latOffset = (Math.random() - 0.5) * 0.01;
+      const lngOffset = (Math.random() - 0.5) * 0.01;
+      setStudioLat((selectedArea.coordinates[0] + latOffset).toFixed(4));
+      setStudioLng((selectedArea.coordinates[1] + lngOffset).toFixed(4));
+    }
+  };
 
   const handleOpenAddModal = () => {
     const nextNum = Math.floor(10 + Math.random() * 90);
@@ -188,6 +230,91 @@ export const DevicesManagementView: React.FC = () => {
     setIsAddModalOpen(false);
   };
 
+  const handleConnectStudioSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStudioIsSyncing(true);
+
+    setTimeout(() => {
+      setStudioIsSyncing(false);
+      const area = areas.find(a => a.id === studioAreaId) || areas[0];
+      const lat = parseFloat(studioLat) || 28.6250;
+      const lng = parseFloat(studioLng) || 77.2150;
+
+      let sensorLabel = 'Virtual ESP32 Multi-Sensor (Studio Live Feed)';
+      let defaultTelemetry: any = {
+        temperature: 29.4,
+        humidity: 62,
+        pm25: 42,
+        pm10: 68,
+        aqi: 76,
+        no2: 26,
+        co: 0.9,
+      };
+
+      if (studioSensorType === 'WATER_QUALITY_PH_TURB_TDS') {
+        sensorLabel = 'Virtual Hydro Sonde (Studio Live Feed)';
+        defaultTelemetry = {
+          temperature: 26.2,
+          humidity: 82,
+          waterPh: 7.2,
+          waterTurbidity: 14.2,
+          waterTds: 310,
+          waterLevelMeters: 2.3,
+        };
+      } else if (studioSensorType === 'GAS_MQ_CO_NO2_SO2') {
+        sensorLabel = 'Virtual Gas MQ Array (Studio Live Feed)';
+        defaultTelemetry = {
+          temperature: 31.0,
+          humidity: 50,
+          co: 1.5,
+          no2: 38,
+          so2: 15,
+          aqi: 95,
+        };
+      } else if (studioSensorType === 'ACOUSTIC_NOISE_DB') {
+        sensorLabel = 'Virtual Acoustic Decibel Sentry (Studio Feed)';
+        defaultTelemetry = {
+          temperature: 28.0,
+          humidity: 60,
+          noiseDb: 68,
+        };
+      }
+
+      addDevice({
+        id: studioNodeId.trim() || `ESP32-STUDIO-${Math.floor(10 + Math.random() * 90)}`,
+        name: studioNodeName.trim() || 'Virtual IoT Node (Studio Feed)',
+        areaId: area.id,
+        areaName: area.name,
+        coordinates: [lat, lng],
+        sensorType: studioSensorType,
+        sensorLabel,
+        status: 'ONLINE',
+        batteryPercentage: 99,
+        isSolarPowered: true,
+        signalStrengthDbm: -52,
+        hardwareVersion: `ESP32-S3 Virtual IoT Twin (${studioUrl.replace('https://', '').replace('/', '')})`,
+        telemetry: defaultTelemetry,
+        riskLevel: 'NORMAL',
+        maintenanceRecommended: false,
+        actuators: {
+          mistCannon: false,
+          sluicePump: false,
+          smogGun: false,
+          soundBarrier: false,
+          warningBeacon: false,
+          ventilationFan: false,
+        }
+      });
+
+      setIsStudioModalOpen(false);
+      addToast({
+        type: 'success',
+        title: 'Studio Device Connected with Location!',
+        message: `Paired node ${studioNodeId} with ${area.name} [${lat.toFixed(4)}, ${lng.toFixed(4)}]. Telemetry streaming from ${studioUrl}.`,
+      });
+    }, 400);
+  };
+
   const handleSimulateSpike = (deviceId: string) => {
     simulateDeviceAnomaly(deviceId, {
       pm25: simPm25,
@@ -225,12 +352,30 @@ export const DevicesManagementView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={() => handleOpenStudioModal()}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition-all font-mono border border-cyan-400/30"
+          >
+            <Radio className="h-4 w-4 text-emerald-400 animate-pulse" />
+            <span>Connect Studio Device</span>
+          </button>
+
+          <button
             onClick={handleOpenAddModal}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-2.5 text-xs font-bold text-white hover:from-emerald-500 hover:to-cyan-500 shadow-lg shadow-cyan-500/20 transition-all font-mono"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-teal-500/20 transition-all font-mono"
           >
             <Plus className="h-4 w-4" />
-            <span>Add City Device (With Location)</span>
+            <span>Add Device (Manual)</span>
           </button>
+
+          <a
+            href="https://eco-sentinel-device.ai.studio/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 px-3 py-2.5 text-xs font-semibold text-cyan-300 transition-colors font-mono"
+            title="Open Virtual IoT Node Engineering Console"
+          >
+            <span>Studio ↗</span>
+          </a>
 
           <button
             onClick={() => setActiveTab('live-map')}
@@ -241,15 +386,6 @@ export const DevicesManagementView: React.FC = () => {
           </button>
 
           <button
-            onClick={resetDevices}
-            title="Reset to default baseline sensors"
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 px-3 py-2.5 text-xs font-medium text-slate-400 hover:text-white transition-colors"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Restore Baseline</span>
-          </button>
-
-          <button
             onClick={clearAllDevices}
             title="Clear all device data"
             className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-950/30 hover:bg-rose-900/50 px-3 py-2.5 text-xs font-bold text-rose-400 transition-colors font-mono"
@@ -257,6 +393,53 @@ export const DevicesManagementView: React.FC = () => {
             <Trash2 className="h-3.5 w-3.5" />
             <span>Clear Devices</span>
           </button>
+        </div>
+      </div>
+
+      {/* VIRTUAL IOT STUDIO INTEGRATION BANNER */}
+      <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/20">
+              <Globe className="h-6 w-6 text-cyan-400 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="rounded-md bg-cyan-500/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-cyan-300 border border-cyan-500/40">
+                  VIRTUAL IOT STUDIO INTEGRATION
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-400">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>https://eco-sentinel-device.ai.studio/</span>
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-bold text-white font-mono">
+                Connect External IoT Simulator to City Location
+              </h2>
+              <p className="text-xs text-slate-400 max-w-2xl mt-0.5">
+                Pair simulated ESP32 environmental telemetry feeds directly from <a href="https://eco-sentinel-device.ai.studio/" target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline font-mono hover:text-cyan-200">eco-sentinel-device.ai.studio</a> to any municipal ward coordinates and test real-time AI incident responses.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => handleOpenStudioModal()}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/20 transition-all font-mono"
+            >
+              <Radio className="h-4 w-4" />
+              <span>Pair Device with Location</span>
+            </button>
+            <a
+              href="https://eco-sentinel-device.ai.studio/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3.5 py-2.5 text-xs font-semibold text-slate-200 transition-colors font-mono"
+            >
+              <span>Open Studio Console</span>
+              <ExternalLink className="h-3.5 w-3.5 text-cyan-400" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -907,6 +1090,211 @@ export const DevicesManagementView: React.FC = () => {
                   <Plus className="h-4 w-4" />
                   <span>Deploy Node into Grid</span>
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. CONNECT STUDIO DEVICE MODAL (eco-sentinel-device.ai.studio) */}
+      {isStudioModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-cyan-500/40 bg-slate-900 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-gradient-to-r from-slate-950 via-cyan-950/40 to-slate-950">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/20">
+                  <Radio className="h-5 w-5 text-emerald-400 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 px-2 py-0.5 rounded border border-cyan-500/40">
+                      LIVE IOT STUDIO BRIDGE
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      READY
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-white font-mono mt-0.5">
+                    Connect External Device from Studio
+                  </h3>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsStudioModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleConnectStudioSubmit} className="p-6 space-y-4 text-xs font-sans">
+              {/* Studio Website URL Input */}
+              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-cyan-300 font-mono text-[11px] flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Studio Web App URL</span>
+                  </label>
+                  <a
+                    href={studioUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] font-mono text-cyan-400 hover:underline"
+                  >
+                    <span>Launch in Browser</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    required
+                    value={studioUrl}
+                    onChange={(e) => setStudioUrl(e.target.value)}
+                    className="flex-1 rounded-xl border border-cyan-500/40 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStudioUrl('https://eco-sentinel-device.ai.studio/')}
+                    className="rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2.5 text-[11px] font-mono text-slate-300 whitespace-nowrap"
+                  >
+                    Cloud Studio
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStudioUrl('http://localhost:5174/')}
+                    className="rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2.5 text-[11px] font-mono text-slate-300 whitespace-nowrap"
+                  >
+                    Local Twin
+                  </button>
+                </div>
+              </div>
+
+              {/* Node ID & Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1 font-mono">Device Node ID</label>
+                  <input
+                    type="text"
+                    required
+                    value={studioNodeId}
+                    onChange={(e) => setStudioNodeId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1 font-mono">Device Label</label>
+                  <input
+                    type="text"
+                    required
+                    value={studioNodeName}
+                    onChange={(e) => setStudioNodeName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* City Zone Placement */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1 font-mono">Deploy in City Zone</label>
+                <select
+                  value={studioAreaId}
+                  onChange={(e) => handleStudioAreaChange(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                >
+                  {areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Spatial Coordinates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1 font-mono">Latitude Coordinates</label>
+                  <input
+                    type="text"
+                    required
+                    value={studioLat}
+                    onChange={(e) => setStudioLat(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1 font-mono">Longitude Coordinates</label>
+                  <input
+                    type="text"
+                    required
+                    value={studioLng}
+                    onChange={(e) => setStudioLng(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Sensor Payload Type */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1 font-mono">Sensor Payload Emulation</label>
+                <select
+                  value={studioSensorType}
+                  onChange={(e) => setStudioSensorType(e.target.value as SensorType)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                >
+                  <option value="PM2_5_PM10_OPTICAL">Optical PM2.5 / PM10 Dust Counter + AQI</option>
+                  <option value="WATER_QUALITY_PH_TURB_TDS">Submersible Hydro Sonde (pH, Turbidity, TDS, Level)</option>
+                  <option value="GAS_MQ_CO_NO2_SO2">Electrochemical Gas Array (CO, NO2, SO2)</option>
+                  <option value="ACOUSTIC_NOISE_DB">Acoustic Sound Level Meter (dB SPL)</option>
+                </select>
+              </div>
+
+              {/* Handshake & Protocol Indicator */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-[11px] font-mono text-slate-400 space-y-1">
+                <div className="flex items-center justify-between text-slate-300 font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <Terminal className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Bridge Protocol: HTTPS / WebSocket</span>
+                  </span>
+                  <span className="text-emerald-400">AUTO-PAIR</span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  The placed node will automatically link with the AI incident triage engine, map visualization, and closed-loop municipal actuator triggers.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 flex items-center justify-between border-t border-slate-800">
+                <a
+                  href={studioUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300"
+                >
+                  <span>Open eco-sentinel-device.ai.studio</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsStudioModalOpen(false)}
+                    className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors font-mono"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={studioIsSyncing}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 transition-all font-mono disabled:opacity-50"
+                  >
+                    <Radio className={`h-4 w-4 ${studioIsSyncing ? 'animate-spin' : 'animate-pulse text-emerald-400'}`} />
+                    <span>{studioIsSyncing ? 'Pairing Node...' : 'Pair & Place on City Map'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

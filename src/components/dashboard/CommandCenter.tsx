@@ -25,7 +25,8 @@ import {
   Send,
   ShieldCheck,
   Zap,
-  HelpCircle
+  HelpCircle,
+  ExternalLink
 } from 'lucide-react';
 
 export const CommandCenter: React.FC = () => {
@@ -70,14 +71,22 @@ export const CommandCenter: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('devices')}
-              className="flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 px-3.5 py-2 text-xs font-bold text-white transition-colors font-mono"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-3.5 py-2 text-xs font-bold text-white transition-all font-mono shadow-md shadow-cyan-500/20"
             >
-              <Radio className="h-3.5 w-3.5" />
-              <span>Manage Sensors & Placement</span>
+              <Radio className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+              <span>Connect Studio Node</span>
             </button>
+            <a
+              href="https://eco-sentinel-device.ai.studio/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 px-3 py-2 text-xs font-semibold text-cyan-300 transition-colors font-mono"
+            >
+              <span>Studio ↗</span>
+            </a>
             <button
               onClick={() => setActiveTab('citizen-report')}
               className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors font-mono"

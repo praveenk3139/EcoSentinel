@@ -17,7 +17,8 @@ import {
   ChevronDown,
   Sparkles,
   Layers,
-  LogOut
+  LogOut,
+  ExternalLink
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -245,6 +246,19 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
 
       {/* Right: Landing Portal toggle, Notifications, Role Switcher */}
       <div className="flex items-center gap-2.5">
+        {/* Virtual IoT Studio Direct Link */}
+        <a
+          href="https://eco-sentinel-device.ai.studio/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 px-2.5 py-1.5 text-xs font-mono font-bold text-cyan-300 transition-colors"
+          title="Open Virtual IoT Node Studio (eco-sentinel-device.ai.studio)"
+        >
+          <Radio className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+          <span>IoT Studio</span>
+          <ExternalLink className="h-3 w-3 text-cyan-400" />
+        </a>
+
         {/* Landing Portal toggle */}
         <button
           onClick={() => setActiveTab(activeTab === 'landing' ? 'dashboard' : 'landing')}
