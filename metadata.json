@@ -1,0 +1,6 @@
+{
+  "name": "EcoSentinel AI",
+  "description": "AI-Based Disease Prediction & Localized Environmental Monitoring System - Environmental Command Center with GIS, IoT telemetry, risk estimation, issue response, and resolution verification.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
